@@ -22,6 +22,6 @@ Add `--notrim false` to include trimming of the reads. Also you can change the t
 - Rahul Pisupati (rahul.pisupati[at]gmi.oeaw.ac.at)
 
 ## Citation
-Cite the paper below if you use SNPmatch tool.
+Cite the paper below if you use this pipeline.
 Pisupati, R. *et al.*. Verification of *Arabidopsis* stock collections using SNPmatch, a tool for genotyping high-plexed samples.  *Nature Scientific Data*  **4**, 170184 (2017).
 [doi:10.1038/sdata.2017.184](https://www.nature.com/articles/sdata2017184)
