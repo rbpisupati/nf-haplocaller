@@ -70,13 +70,13 @@ if ( params.fasta ){
   exit 1, "Provide reference fasta file. Ex., --fasta file_path"
 }
 
-num_files = 1
-if ( params.file_ext == 'fastq' ){
-  num_files = params.singleEnd ? 1 : 2
-}
-read_files_processing = Channel
-    .fromFilePairs( params.reads, size: num_files )
-    .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --singleEnd on the command line." }
+// num_files = 1
+// if ( params.file_ext == 'fastq' ){
+//   num_files = params.singleEnd ? 1 : 2
+// }
+// read_files_processing = Channel
+//     .fromFilePairs( params.reads, size: num_files )
+//     .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --singleEnd on the command line." }
 
 /// ______________________________
 
@@ -380,11 +380,6 @@ process doSNPcall {
 /*
 * 10. GenotypeGVCF for all the files
 */
-raw_gvcf = Channel
-    .fromPath( "${params.outdir}/gvcf/*g.vcf.gz" )
-raw_gvcf_index = Channel
-    .fromPath( "${params.outdir}/gvcf/*g.vcf.gz.tbi" )
-
 input_genotypegvcf = raw_gvcf.collect()
 input_genotypegvcf_index = raw_gvcf_index.collect()
 
