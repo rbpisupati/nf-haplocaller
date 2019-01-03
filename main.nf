@@ -362,8 +362,8 @@ process doSNPcall {
   set val(name), file(bam_index) from realigned_bam_index
 
   output:
-  set val(name), file("${name}.g.vcf.gz") into raw_gvcf
-  set val(name), file("${name}.g.vcf.gz.tbi") into raw_gvcf_index
+  file("${name}.g.vcf.gz") into raw_gvcf
+  file("${name}.g.vcf.gz.tbi") into raw_gvcf_index
 
   script:
   """
@@ -387,7 +387,7 @@ process joinGVCFs {
   publishDir "$params.outdir", mode: 'copy'
 
   input:
-  file(in_vcf) from input_genotypegvcf
+  file in_vcf from input_genotypegvcf
   file(vcf_idx) from input_genotypegvcf_index
 
   output:
