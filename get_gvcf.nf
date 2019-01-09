@@ -1,7 +1,7 @@
 /*
-Provide directories as inputs
+Provide directories as inputs with .gvcf files present
 
-
+nextflow run ~/mygit/nf-haplocaller/get_gvcf.nf --input "0*" --fasta 100.REF_SEQ/TAIR10_wholeGenome.fasta --outdir temp
 
 */
 
@@ -29,14 +29,14 @@ if ( params.fasta ){
 
 input_gvcfs = Channel
       .fromPath( "${params.input}", type: 'dir' )
-      .map{ it -> [it.name, file("$it/*gvcf")] }
+      .map{ it -> [it.name, file("$it/*gvcf"), file("$it/*gvcf.idx")] }
 
 process joinGVCFs {
   tag "$fol_name"
   publishDir "$params.outdir", mode: 'copy'
 
   input:
-  set val(fol_name), file(in_vcf) from input_gvcfs
+  set val(fol_name), file(in_vcf), file(in_vcf_idx) from input_gvcfs
 
   output:
   set file("${fol_name}.vcf.gz"), file("${fol_name}.vcf.gz.tbi") into combgVCF
