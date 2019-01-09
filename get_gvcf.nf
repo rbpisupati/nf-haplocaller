@@ -22,9 +22,34 @@ if ( params.fasta ){
   bwa_indices = Channel
     .fromPath( "$reffol/${refid}.fasta.b*" )
     .ifEmpty { build_index = true }
-    .subscribe onComplete: { checked_genome_index = true }
 } else {
   exit 1, "Provide reference fasta file. Ex., --fasta file_path"
+}
+
+/*
+* 1. Create a channel for checking bwa index for genome ref
+*/
+if (build_index == true){
+  process makeBWAindex {
+      publishDir "${reffol}", mode: 'copy'
+
+      input:
+      file genome
+
+      output:
+      file "${refid}.fasta.*" into fasta_index
+      file "${refid}.dict" into fasta_dict
+
+      script:
+      """
+      samtools faidx ${genome}
+      bwa index $genome
+      java -jar \$EBROOTPICARD/picard.jar  CreateSequenceDictionary R=$genome O=${refid}.dict
+      """
+  }
+} else {
+  fasta_index = Channel
+    .fromPath( "$reffol/${refid}.fasta.*" )
 }
 
 input_gvcfs = Channel
@@ -37,6 +62,7 @@ process joinGVCFs {
 
   input:
   set val(fol_name), file(in_vcf), file(in_vcf_idx) from input_gvcfs
+  file fasta_index
 
   output:
   set file("${fol_name}.vcf.gz"), file("${fol_name}.vcf.gz.tbi") into combgVCF
