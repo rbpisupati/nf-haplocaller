@@ -274,7 +274,7 @@ process alignReads {
 
   script:
   """
-  bwa mem -t ${task.cpus} -p $genome $reads > ${name}.sam
+  bwa mem -t ${task.cpus} -p $reffol/${refid}.fasta $reads > ${name}.sam
   """
 }
 
