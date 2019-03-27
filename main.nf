@@ -125,6 +125,7 @@ log.info "========================================="
 if (build_index == true){
   process makeBWAindex {
       publishDir "${reffol}", mode: 'copy'
+      label 'env_bwa_small'
 
       input:
       file genome
@@ -157,6 +158,7 @@ if (params.file_ext == "fastq"){
   process extractFastq {
     tag "$name"
     storeDir "${params.tmpdir}/rawreads"
+    label 'env_qual_small'
 
     input:
     set val(name), file(reads) from read_files_processing
@@ -220,6 +222,7 @@ if(params.notrim){
 } else {
     process trim_galore {
         tag "$name"
+        label 'env_trim'
         publishDir "${params.outdir}/trim_galore", mode: 'copy',
             saveAs: {filename ->
                 if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
@@ -261,6 +264,7 @@ if(params.notrim){
 */
 process alignReads {
   tag "$name"
+  label 'env_bwa_large'
 
   input:
   set val(name), file(reads) from trimmed_reads
@@ -281,6 +285,7 @@ process alignReads {
 */
 process processBam {
   tag "$name"
+  label 'env_picard_medium'
 
   input:
   set val(name), file(sam) from aligned_sam
@@ -301,6 +306,7 @@ process processBam {
 */
 process picardBam {
   tag "$name"
+  label 'env_picard_small'
 
   input:
   set val(name), file(bam) from sorted_bam
@@ -323,6 +329,7 @@ process picardBam {
 process realignBam {
   tag "$name"
   publishDir "${params.outdir}/alignedBam", mode: 'copy'
+  label 'env_gatk_small'
 
   input:
   set val(name), file(bam) from modified_bam
@@ -354,6 +361,7 @@ process realignBam {
 process doSNPcall {
   tag "$name"
   publishDir "${params.outdir}/gvcf", mode: 'copy'
+  label 'env_gatk_medium'
 
   input:
   set val(name), file(bam) from realigned_bam
@@ -383,6 +391,7 @@ input_genotypegvcf_index = raw_gvcf_index.collect()
 
 process joinGVCFs {
   publishDir "$params.outdir", mode: 'copy'
+  label 'env_gatk_large'
 
   input:
   file in_vcf from input_genotypegvcf
@@ -410,6 +419,7 @@ process joinGVCFs {
 */
 process getSamples {
   tag "joinGVCF"
+  label 'env_gatk_small'
 
   input:
   file gvcf from combgVCF_name
@@ -432,6 +442,7 @@ input_names = sample_names
 process selectSNPs {
   tag "$name"
   publishDir "${params.outdir}/vcf", mode: 'copy'
+  label 'env_gatk_small'
 
   input:
   val name from input_names
