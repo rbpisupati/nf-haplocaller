@@ -24,12 +24,14 @@ nextflow run main.nf --reads "*bam" --file_ext bam --fasta ~/TAiR10_ARABIDOPSIS/
  * SET UP CONFIGURATION VARIABLES
  */
 params.project = "the1001genomes"
-build_index = false
 params.outdir = './snpcall'
-params.fasta = false
+params.fasta = false   // reference fasta file
 params.file_ext = "bam"  // please change this accordingly..
+params.singleEnd = false
 params.tmpdir = "/lustre/scratch/users/rahul.pisupati/tempFiles/"
 
+params.saveTrimmed = false
+build_index = false
 params.name = false
 params.notrim = true
 params.clusterOptions = false
@@ -96,14 +98,10 @@ log.info "=================================================="
 def summary = [:]
 summary['Run Name']       = custom_runName ?: workflow.runName
 summary['Reads']          = params.reads
-summary['Aligner']        = params.aligner
 summary['Data Type']      = params.singleEnd ? 'Single-End' : 'Paired-End'
 summary['Genome']         = params.fasta
 if(params.notrim)       summary['Trimming Step'] = 'Skipped'
-summary['Save Reference'] = params.saveReference ? 'Yes' : 'No'
 summary['Save Trimmed']   = params.saveTrimmed ? 'Yes' : 'No'
-summary['Save Unmapped']  = params.unmapped ? 'Yes' : 'No'
-summary['Save Intermeds'] = params.saveAlignedIntermediates ? 'Yes' : 'No'
 summary['Max Memory']     = params.max_memory
 summary['Max CPUs']       = params.max_cpus
 summary['Max Time']       = params.max_time
