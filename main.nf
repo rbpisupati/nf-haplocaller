@@ -198,6 +198,7 @@ if (params.file_ext == "fastq"){
 */
 process fastqc {
     tag "$name"
+    label 'env_qual_small'
     publishDir "${params.outdir}/fastqc", mode: 'copy',
         saveAs: {filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"}
 
