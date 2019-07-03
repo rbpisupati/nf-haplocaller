@@ -270,7 +270,8 @@ process alignReads {
   input:
   set val(name), file(reads) from trimmed_reads
   file genome
-  file indices from bwa_index
+  file indices from bwa_index.collect()
+  file fa_dict from fasta_dict.collect()
 
   output:
   set val(name), file("${name}.sam") into aligned_sam
