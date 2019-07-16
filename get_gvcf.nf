@@ -12,7 +12,6 @@ params.outdir = './snpcall'
 params.fasta = false
 params.tmpdir = "/lustre/scratch/users/rahul.pisupati/tempFiles/"
 
-params.name = false
 
 if ( params.fasta ){
   genome = file(params.fasta)
@@ -32,6 +31,7 @@ if ( params.fasta ){
 if (build_index == true){
   process makeBWAindex {
       publishDir "${reffol}", mode: 'copy'
+      label 'env_bwa_small'
 
       input:
       file genome
@@ -50,19 +50,25 @@ if (build_index == true){
 } else {
   fasta_index = Channel
     .fromPath( "$reffol/${refid}.fasta.*" )
+  fasta_dict = Channel
+    .fromPath( "$reffol/${refid}.dict" )
 }
 
 input_gvcfs = Channel
       .fromPath( "${params.input}", type: 'dir' )
-      .map{ it -> [it.name, file("$it/*gvcf"), file("$it/*gvcf.idx")] }
+      .map{ it -> [it.name, file("$it/*g.vcf.gz"), file("$it/*g.vcf.gz.tbi")] }
 
 process joinGVCFs {
   tag "$fol_name"
   publishDir "$params.outdir", mode: 'copy'
+  label 'env_gatk_large'
 
   input:
   set val(fol_name), file(in_vcf), file(in_vcf_idx) from input_gvcfs
-  file fasta_index
+  file genome
+  file indices from fasta_index.collect()
+  file fa_dict from fasta_dict.collect()
+
 
   output:
   set file("${fol_name}.vcf.gz"), file("${fol_name}.vcf.gz.tbi") into combgVCF
@@ -71,7 +77,7 @@ process joinGVCFs {
   def try_vcfs = in_vcf.collect { "-V $it" }.join(' ')
   """
   java -Djava.io.tmpdir=${params.tmpdir} -jar \$EBROOTGATK/GenomeAnalysisTK.jar\
-  -T GenotypeGVCFs -R $reffol/${refid}.fasta\
+  -T GenotypeGVCFs -R $genome\
   -nt ${task.cpus} \
   $try_vcfs -o ${fol_name}.vcf.gz \
   -allSites -variant_index_type LINEAR -variant_index_parameter 128000

@@ -2,7 +2,7 @@
 provide all the GVCFs together, the script can split the samples separately
 
 
-nextflow run get_filter_vcf.nf --reads "001.plate.raw.vcfs/*vcf" --fasta ref_seq/TAIR10_wholeGenome.fasta  --outdir filter_vcfs
+nextflow run get_filter_vcf.nf --input "001.plate.raw.vcfs/*vcf" --fasta ref_seq/TAIR10_wholeGenome.fasta  --outdir filter_vcfs
 */
 
 
@@ -27,7 +27,7 @@ if ( params.fasta ){
 
 input_gvcfs = Channel
       .fromPath( "${params.input}" )
-      .map { it -> [ file("$it").getExtension(), file("$it"), file("$it" + ".idx") ] }
+      .map { it -> [ file("$it").getExtension(), file("$it"), file("${it}.*") ] }
 
 /*
 * 1. Create a channel for checking bwa index for genome ref
@@ -35,6 +35,7 @@ input_gvcfs = Channel
 if (build_index == true){
   process makeBWAindex {
       publishDir "${reffol}", mode: 'copy'
+      label 'env_bwa_small'
 
       input:
       file genome
@@ -53,17 +54,22 @@ if (build_index == true){
 } else {
   fasta_index = Channel
     .fromPath( "$reffol/${refid}.fasta.*" )
+  fasta_dict = Channel
+    .fromPath( "$reffol/${refid}.dict" )
 }
 
 process getSamples {
+  tag "$gvcf"
+  label 'env_gatk_small'
 
   input:
   set val(file_ext), file(gvcf), file(gvcf_index) from input_gvcfs
 
   output:
-  set file("$gvcf"), stdout into sample_names
+  set val(out_fol), file("$gvcf"), file("$gvcf_index"), stdout into sample_names
 
   script:
+  out_fol =  file("$gvcf").baseName.replace( /.vcf/, '')
   if (file_ext == "gz"){
     """
     tabix -H $gvcf | grep -m 1 "^#CHROM" | awk '{for(i=10;i<=NF;i++) print \$i}'
@@ -76,25 +82,24 @@ process getSamples {
 }
 
 input_names = sample_names
-    .splitText(elem: 1)
-    .map{ row -> [file("${row[0]}"), file("${row[0]}.idx"), "${row[1]}".replace('\n','') ]  }
+    .splitText(elem: 3)
+    .map{ row -> ["${row[0]}", file("${row[1]}"), file("${row[2]}"), "${row[3]}".replace('\n','') ]  }
 
 process selectSNPs {
   tag "$name"
   publishDir "${params.outdir}/$out_fol", mode: 'copy'
+  label 'env_gatk_small'
 
   input:
-  set file(gvcf), file(gvcf_index), val(name) from input_names
-  file fasta_index
+  set val(out_fol), file(gvcf), file(gvcf_index), val(name) from input_names
 
   when:
-  file("${params.outdir}/${out_fol}/${name}.filter.vcf").isEmpty()
+  file("${params.outdir}/${out_fol}/${name}.filter.vcf.idx").isEmpty()
 
   output:
   set file("${name}.filter.vcf"), file("${name}.filter.vcf.idx") into filter_vcf
 
   script:
-  out_fol =  file("$gvcf").baseName.replace( /.vcf/, '')
   """
   java -Djava.io.tmpdir=${params.tmpdir} -jar \$EBROOTGATK/GenomeAnalysisTK.jar\
   -T SelectVariants -R $reffol/${refid}.fasta\
